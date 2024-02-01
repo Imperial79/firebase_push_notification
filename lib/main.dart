@@ -1,6 +1,6 @@
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
-import 'package:firebase_push_notification/Api/firebase_api.dart';
+import 'package:firebase_push_notification/Api/notification_config.dart';
 import 'package:firebase_push_notification/firebase_options.dart';
 import 'package:flutter/material.dart';
 import 'HomeUI.dart';
@@ -11,7 +11,9 @@ void main() async {
     options: DefaultFirebaseOptions.currentPlatform,
   );
   await FirebaseMessaging.instance.setAutoInitEnabled(true);
-  FirebaseApi().initNotification();
+  // FirebaseApi().initNotification();
+  FirebaseNotification.init();
+  LocalNotification.init();
 
   runApp(const MyApp());
 }
@@ -22,7 +24,7 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Flutter Demo',
+      title: 'Flutter Push Notification',
       theme: ThemeData(
         colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
         useMaterial3: true,

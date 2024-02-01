@@ -1,7 +1,7 @@
 import 'dart:convert';
 import 'dart:developer';
+import 'package:firebase_push_notification/Api/notification_config.dart';
 import 'package:googleapis_auth/auth_io.dart' as auth;
-import 'package:firebase_push_notification/Api/firebase_api.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 
@@ -50,7 +50,7 @@ class _HomeUIState extends State<HomeUI> {
   _sendNotification() async {
     final body = {
       "message": {
-        "token": FCMconstants.myToken,
+        "token": Constants.myToken,
         "notification": {
           "title": "Notification Title",
           "body": "Notification Body"
@@ -60,7 +60,7 @@ class _HomeUIState extends State<HomeUI> {
     };
     String accessToken = await _generateAccessToken();
     var res = await http.post(
-      Uri.parse(FCMconstants.fcmBaseUrl),
+      Uri.parse(Constants.fcmBaseUrl),
       headers: {
         "Content-Type": 'application/json',
         "Authorization": "Bearer $accessToken",
