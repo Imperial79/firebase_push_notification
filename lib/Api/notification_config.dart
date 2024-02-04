@@ -2,10 +2,15 @@
 
 import 'dart:convert';
 import 'dart:developer';
+import 'dart:io';
 import 'package:googleapis_auth/auth_io.dart' as auth;
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:http/http.dart' as http;
+import 'dart:ui' as ui;
+import 'package:flutter/material.dart';
+import 'package:flutter_cache_manager/flutter_cache_manager.dart';
+import 'package:path_provider/path_provider.dart';
 
 class Constants {
   static const String serverKey =
@@ -125,9 +130,11 @@ class LocalNotification {
       },
     );
 
-    FirebaseMessaging.onMessage.listen((message) {
+    FirebaseMessaging.onMessage.listen((message) async {
+      log("New Message!!!");
       log("Title-> ${message.notification!.title}");
       log("body-> ${message.notification!.body}");
+      log("body-> ${message.notification!.android!.imageUrl}");
       log("data-> ${message.data}");
 
       // Check manifest for some lines in the meta-data tag
@@ -136,6 +143,11 @@ class LocalNotification {
       log("Body-> ${notification.body}");
 
       // if (notification == null) return;
+
+      final _bigPicture = await urlToAndroidBitmap(
+          notification.android!.imageUrl!, 'bigPicture');
+      final _largePicture = await urlToAndroidBitmap(
+          message.data["largePicture"], 'largePicture');
       _localNotification.show(
         notification.hashCode,
         notification.title!,
@@ -146,19 +158,10 @@ class LocalNotification {
             _androidChannel.name,
             channelDescription: _androidChannel.description,
             icon: '@drawable/ic_launcher',
-            // actions: [
-            //   AndroidNotificationAction(
-            //     '1',
-            //     'Open',
-            //     showsUserInterface: true,
-            //     // inputs: [
-            //     //   AndroidNotificationActionInput(
-            //     //     allowFreeFormInput: true,
-            //     //     label: 'textMessage',
-            //     //   ),
-            //     // ],
-            //   ),
-            // ],
+            styleInformation: BigPictureStyleInformation(
+              FilePathAndroidBitmap(_bigPicture),
+              largeIcon: FilePathAndroidBitmap(_largePicture),
+            ),
           ),
         ),
         payload: jsonEncode(message.toMap()),
@@ -167,23 +170,33 @@ class LocalNotification {
   }
 }
 
+Future<String> urlToAndroidBitmap(String url, String fileName) async {
+  final directory = await getApplicationDocumentsDirectory();
+  final filePath = '${directory.path}/$fileName';
+  final response = await http.get(Uri.parse(url));
+  final file = File(filePath);
+
+  await file.writeAsBytes(response.bodyBytes);
+  return filePath;
+}
+
 class SendNotification {
   static Future<void> toUser(String userToken) async {
     final body = {
       "message": {
         "token": userToken,
         "notification": {
-          "title": "Notification Title",
-          "body": "Notification Body"
+          "title": "Notification to me",
+          "body": "Body to me",
+          "image": "https://source.unsplash.com/random",
         },
-        "data": {"key": "value"},
-        // "topic": "All",
+        "data": {"largePicture": "https://source.unsplash.com/random"},
       }
     };
 
     String accessToken = await FirebaseNotification.generateAccessToken();
     try {
-      await http.post(
+      final res = await http.post(
         Uri.parse(Constants.fcmBaseUrl),
         headers: {
           "Content-Type": 'application/json',
@@ -191,6 +204,7 @@ class SendNotification {
         },
         body: jsonEncode(body),
       );
+      log(res.body.toString());
     } catch (e) {
       log("Some error occurred-> $e");
     }
@@ -201,9 +215,10 @@ class SendNotification {
       "message": {
         "notification": {
           "title": "Notification Title",
-          "body": "Notification Body"
+          "body": "Notification Body",
+          "image": "https://source.unsplash.com/random",
         },
-        "data": {"key": "value"},
+        "data": {"largePicture": "https://source.unsplash.com/random"},
         "topic": topic,
       }
     };
